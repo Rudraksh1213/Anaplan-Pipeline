@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Anaplan Pipeline Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#060b12;--s1:#0c1219;--s2:#121b25;--s3:#1a2535;
+  --border:rgba(255,255,255,0.06);
+  --accent:#00e5b0;--blue:#3b9eff;--red:#ff4466;--warn:#ffaa00;--purple:#a855f7;
+  --text:#c8dff0;--muted:#3d5570;
+  --fh:'Syne',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,229,176,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,176,.02) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0;}
+.o1{width:600px;height:600px;top:-200px;right:-150px;background:rgba(0,229,176,.04);}
+.o2{width:500px;height:500px;bottom:-150px;left:-150px;background:rgba(59,158,255,.04);}
+.o3{width:300px;height:300px;top:40%;left:40%;background:rgba(168,85,247,.025);}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh;}
+
+/* ── LOGIN ────────────────────────────── */
+#login{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+.lcard{width:100%;max-width:480px;background:var(--s1);border:1px solid rgba(0,229,176,.12);
+  border-radius:24px;padding:48px 44px;box-shadow:0 0 100px rgba(0,229,176,.05),0 50px 100px rgba(0,0,0,.6);
+  animation:slideUp .5s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.llogo{width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  margin-bottom:28px;box-shadow:0 0 40px rgba(0,229,176,.3);}
+.ltitle{font-family:var(--fh);font-size:28px;font-weight:800;color:#fff;margin-bottom:6px;}
+.lsub{color:var(--muted);font-size:13px;margin-bottom:36px;line-height:1.6;}
+.field{margin-bottom:18px;}
+label{display:block;font-size:10px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+input,select,textarea{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:var(--fm);font-size:13px;padding:11px 14px;outline:none;
+  transition:border-color .2s,box-shadow .2s;}
+input:focus,select:focus,textarea:focus{border-color:rgba(0,229,176,.35);box-shadow:0 0 0 3px rgba(0,229,176,.07);}
+select option{background:#1a2535;}
+textarea{resize:vertical;min-height:80px;}
+
+/* ── BUTTONS ──────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 20px;border-radius:10px;border:none;font-family:var(--fm);
+  font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;letter-spacing:.3px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#00c994);color:#000;
+  box-shadow:0 4px 24px rgba(0,229,176,.28);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 7px 32px rgba(0,229,176,.4);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-ghost:hover{border-color:rgba(0,229,176,.3);color:var(--accent);}
+.btn-danger{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.25);color:var(--red);}
+.btn-danger:hover{background:rgba(255,68,102,.2);}
+.btn-run{background:linear-gradient(135deg,var(--blue),#2277cc);color:#fff;
+  box-shadow:0 2px 16px rgba(59,158,255,.25);}
+.btn-run:hover{transform:translateY(-1px);box-shadow:0 5px 24px rgba(59,158,255,.4);}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;}
+.btn-xs{padding:4px 10px;font-size:11px;border-radius:6px;}
+.btn-w{width:100%;margin-top:4px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;}
+
+/* ── TOPBAR ───────────────────────────── */
+.topbar{display:flex;align-items:center;gap:14px;padding:13px 24px;
+  background:rgba(8,12,18,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;}
+.tlogo{font-family:var(--fh);font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
+.tlogo-icon{width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:15px;}
+.tlogo span{color:var(--accent);}
+.tstats{display:flex;gap:8px;margin-left:auto;}
+.tstat{display:flex;align-items:center;gap:6px;padding:5px 12px;
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;font-size:12px;}
+.tstat-val{font-weight:600;}
+.tstat.green .tstat-val{color:var(--accent);}
+.tstat.red .tstat-val{color:var(--red);}
+.tstat.blue .tstat-val{color:var(--blue);}
+.tstat.warn .tstat-val{color:var(--warn);}
+.user-chip{background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:5px 12px;font-size:12px;color:var(--muted);}
+.session-banner{display:none;align-items:center;gap:10px;padding:10px 24px;background:rgba(255,170,0,.1);border-bottom:1px solid rgba(255,170,0,.22);color:#ffd788;font-size:12px;}
+.session-banner.show{display:flex;}
+.session-banner strong{color:#fff;}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── LAYOUT ───────────────────────────── */
+.workspace{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:200px;min-width:200px;background:var(--s1);border-right:1px solid var(--border);padding:16px 12px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;
+  cursor:pointer;font-size:13px;color:#6688a0;transition:all .15s;margin-bottom:2px;
+  border:1px solid transparent;}
+.nav-item:hover{background:rgba(0,229,176,.06);color:var(--text);}
+.nav-item.active{background:rgba(0,229,176,.1);border-color:rgba(0,229,176,.18);color:var(--accent);}
+.nav-icon{font-size:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;
+  padding:1px 7px;font-size:10px;font-weight:700;}
+.content{flex:1;overflow-y:auto;padding:28px 32px;}
+
+/* ── PANELS ───────────────────────────── */
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:16px;margin-bottom:20px;overflow:hidden;}
+.ph{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015);}
+.ph-icon{font-size:18px;}.ph-title{font-family:var(--fh);font-size:14px;font-weight:700;color:#fff;}
+.ph-sub{color:var(--muted);font-size:12px;margin-left:4px;}
+.ph-actions{margin-left:auto;display:flex;gap:8px;}
+.pb{padding:20px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+
+/* ── STAT CARDS ───────────────────────── */
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;
+  display:flex;flex-direction:column;gap:6px;}
+.sc-label{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
+.sc-val{font-family:var(--fh);font-size:30px;font-weight:800;color:#fff;}
+.sc-sub{font-size:11.5px;color:var(--muted);}
+.sc-accent .sc-val{color:var(--accent);}
+.sc-red .sc-val{color:var(--red);}
+.sc-blue .sc-val{color:var(--blue);}
+.sc-warn .sc-val{color:var(--warn);}
+
+/* ── PIPELINE CARDS ───────────────────── */
+.pipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;}
+.pipe-card{background:var(--s2);border:1px solid var(--border);border-radius:14px;
+  padding:18px;transition:border-color .2s,box-shadow .2s;position:relative;overflow:hidden;}
+.pipe-card:hover{border-color:rgba(0,229,176,.2);box-shadow:0 4px 24px rgba(0,0,0,.3);}
+.pipe-card.running{border-color:rgba(59,158,255,.3);animation:runningPulse 2s infinite;}
+.pipe-card.failed{border-color:rgba(255,68,102,.25);}
+.pipe-card.success{border-color:rgba(0,229,176,.2);}
+@keyframes runningPulse{0%,100%{box-shadow:0 0 0 0 rgba(59,158,255,.2)}50%{box-shadow:0 0 0 6px rgba(59,158,255,.05)}}
+.pc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.pc-name{font-family:var(--fh);font-size:14px;font-weight:700;color:#fff;}
+.pc-desc{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:600;flex-shrink:0;}
+.sp-idle{background:rgba(61,85,112,.3);color:#6688a0;border:1px solid rgba(61,85,112,.4);}
+.sp-running{background:rgba(59,158,255,.15);color:var(--blue);border:1px solid rgba(59,158,255,.25);}
+.sp-success{background:rgba(0,229,176,.12);color:var(--accent);border:1px solid rgba(0,229,176,.22);}
+.sp-failed{background:rgba(255,68,102,.12);color:var(--red);border:1px solid rgba(255,68,102,.22);}
+.sp-warning{background:rgba(255,170,0,.12);color:var(--warn);border:1px solid rgba(255,170,0,.22);}
+.pc-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.pc-tag{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;
+  padding:3px 9px;font-size:11px;color:var(--muted);}
+.pc-steps{margin-bottom:14px;}
+.step-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.step-row:last-child{border-bottom:none;}
+.step-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-import{background:var(--blue);}.dot-export{background:var(--purple);}
+.dot-action{background:var(--warn);}.dot-process{background:var(--accent);}
+.step-type{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0;}
+.type-import{background:rgba(59,158,255,.15);color:var(--blue);}
+.type-export{background:rgba(168,85,247,.15);color:var(--purple);}
+.type-action{background:rgba(255,170,0,.15);color:var(--warn);}
+.type-process{background:rgba(0,229,176,.15);color:var(--accent);}
+.step-name{flex:1;color:var(--text);}
+.pc-footer{display:flex;align-items:center;gap:8px;}
+.pc-last{font-size:11px;color:var(--muted);flex:1;}
+.progress-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));border-radius:2px;transition:width .3s;}
+
+/* ── HISTORY TABLE ────────────────────── */
+.htable{width:100%;border-collapse:collapse;font-size:12.5px;}
+.htable th{text-align:left;padding:10px 14px;color:var(--muted);font-size:10.5px;
+  letter-spacing:1.2px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500;}
+.htable td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.htable tr:hover td{background:rgba(255,255,255,.015);}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+.sd-success{background:var(--accent);box-shadow:0 0 6px rgba(0,229,176,.5);}
+.sd-failed{background:var(--red);box-shadow:0 0 6px rgba(255,68,102,.5);}
+.sd-warning{background:var(--warn);box-shadow:0 0 6px rgba(255,170,0,.5);}
+.sd-running{background:var(--blue);animation:blink 1s infinite;}
+
+/* ── ALERTS ───────────────────────────── */
+.alert-item{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;
+  border-radius:12px;margin-bottom:10px;border:1px solid;}
+.ai-error{background:rgba(255,68,102,.07);border-color:rgba(255,68,102,.2);}
+.ai-warning{background:rgba(255,170,0,.07);border-color:rgba(255,170,0,.2);}
+.ai-success{background:rgba(0,229,176,.07);border-color:rgba(0,229,176,.18);}
+.ai-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.ai-body{flex:1;}
+.ai-msg{font-size:13px;color:var(--text);margin-bottom:3px;}
+.ai-meta{font-size:11px;color:var(--muted);}
+.ai-dismiss{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px;flex-shrink:0;}
+.ai-dismiss:hover{color:var(--text);}
+
+/* ── MODAL ────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
+  z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid rgba(0,229,176,.14);border-radius:20px;
+  width:100%;max-width:680px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 0 80px rgba(0,0,0,.7);animation:slideUp .3s ease;}
+.modal-header{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
+.modal-title{font-family:var(--fh);font-size:16px;font-weight:700;color:#fff;flex:1;}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+/* ── STEP BUILDER ─────────────────────── */
+.step-builder{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.sb-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.sb-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#000;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.sb-remove{margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;}
+
+/* ── SCHEDULE BADGE ───────────────────── */
+.sched-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;
+  font-size:11px;background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.22);}
+
+/* ── MISC ─────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:14px;}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.15);
+  border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.tag-import{color:var(--blue);}.tag-export{color:var(--purple);}
+.tag-action{color:var(--warn);}.tag-process{color:var(--accent);}
+.err-box{display:none;margin-top:12px;background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.22);
+  border-radius:9px;padding:12px 14px;font-size:12.5px;color:#ff8fa3;white-space:pre-wrap;}
+.info-box{background:rgba(59,158,255,.07);border:1px solid rgba(59,158,255,.18);
+  border-radius:9px;padding:12px 14px;font-size:12px;color:#82b4d8;margin-bottom:16px;line-height:1.65;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+@media(max-width:768px){.sidebar{display:none;}.grid4{grid-template-columns:1fr 1fr;}.grid3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div id="app">
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="login">
+  <div class="lcard">
+    <div class="llogo">🚀</div>
+    <div class="ltitle">Pipeline Dashboard</div>
+    <div class="lsub">Connect your Anaplan account to monitor, build and automate data pipelines in real-time.</div>
+    <div class="field">
+      <label>Auth Type</label>
+      <select id="at" onchange="toggleAuth()">
+        <option value="basic">Email + Password</option>
+        <option value="token">Anaplan Auth Token</option>
+      </select>
+    </div>
+    <div id="bf">
+      <div class="field"><label>Email</label><input type="email" id="le" placeholder="you@company.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="lp" placeholder="••••••••"/></div>
+    </div>
+    <div id="tf" style="display:none">
+      <div class="field"><label>Anaplan Auth Token</label><input type="password" id="lt" placeholder="AnaplanAuthToken ..., Authorization: AnaplanAuthToken ..., or raw token value"/></div>
+    </div>
+    <button class="btn btn-primary btn-w" onclick="doLogin()" id="lbtn">🔌 Connect to Anaplan</button>
+    <div class="err-box" id="lerr"></div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="main" style="display:none;flex-direction:column;flex:1;">
+  <div class="session-banner" id="session-banner"></div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tlogo">
+      <div class="tlogo-icon">🚀</div>
+      Anaplan <span>Pipeline</span> Dashboard
+    </div>
+    <div class="tstats">
+      <div class="tstat green"><div class="pulse"></div><span class="tstat-val" id="ts-running">0</span> Running</div>
+      <div class="tstat red"><span class="tstat-val" id="ts-failed">0</span> Failed</div>
+      <div class="tstat blue"><span class="tstat-val" id="ts-total">0</span> Pipelines</div>
+      <div class="tstat warn" id="ts-alerts-wrap" style="cursor:pointer" onclick="switchTab('alerts')">
+        <span class="tstat-val" id="ts-alerts">0</span> Alerts
+      </div>
+    </div>
+    <div class="user-chip" id="user-lbl"></div>
+    <button class="btn btn-ghost btn-sm" onclick="window.open('/admin/db','_blank')">DB Admin</button>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="workspace">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" id="nav-pipelines" onclick="switchTab('pipelines')">
+        <span class="nav-icon">⚡</span> Pipelines
+      </div>
+      <div class="nav-item" id="nav-history" onclick="switchTab('history')">
+        <span class="nav-icon">📋</span> Run History
+      </div>
+      <div class="nav-item" id="nav-alerts" onclick="switchTab('alerts')">
+        <span class="nav-icon">🔔</span> Alerts
+        <span class="nav-badge" id="alert-badge" style="display:none">0</span>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- ─── DASHBOARD TAB ─── -->
+      <div id="tab-dashboard">
+        <div class="grid4" style="margin-bottom:20px;" id="stat-cards">
+          <div class="stat-card sc-blue"><div class="sc-label">Total Pipelines</div><div class="sc-val" id="sc-total">0</div><div class="sc-sub">configured</div></div>
+          <div class="stat-card sc-accent"><div class="sc-label">Successful Runs</div><div class="sc-val" id="sc-success">0</div><div class="sc-sub">all time</div></div>
+          <div class="stat-card sc-red"><div class="sc-label">Failed Runs</div><div class="sc-val" id="sc-failed">0</div><div class="sc-sub">all time</div></div>
+          <div class="stat-card sc-warn"><div class="sc-label">Avg Duration</div><div class="sc-val" id="sc-duration">0s</div><div class="sc-sub">per run</div></div>
+        </div>
+
+        <!-- Live Pipeline Status -->
+        <div class="panel">
+          <div class="ph">
+            <span class="ph-icon">⚡</span>
+            <div class="ph-title">Live Pipeline Status</div>
+            <div class="ph-sub">auto-refreshes every 5s</div>
+            <div class="ph-actions">
+              <button class="btn btn-primary btn-sm" onclick="switchTab('pipelines');setTimeout(()=>openCreateModal(),100)">+ New Pipeline</button>
+            </div>
+          </div>
+          <div class="pb">
+            <div class="pipe-grid" id="dashboard-pipes">
+              <div class="empty"><div class="empty-icon">🔧</div><div class="empty-text">No pipelines yet. Create your first one!</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="panel">
+          <div class="ph"><span class="ph-icon">📋</span><div class="ph-title">Recent Activity</div><div class="ph-sub">last 10 runs</div></div>
+          <div class="pb">
+            <table class="htable" id="recent-table">
+              <thead><tr><th>Status</th><th>Pipeline</th><th>Step</th><th>Duration</th><th>Time</th></tr></thead>
+              <tbody id="recent-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">No runs yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── PIPELINES TAB ─── -->
+      <div id="tab-pipelines" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <div style="font-family:var(--fh);font-size:20px;font-weight:800;color:#fff;">My Pipelines</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:3px;">Build, schedule and monitor your data pipelines</div>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateModal()">+ Create Pipeline</button>
+        </div>
+        <div class="pipe-grid" id="pipelines-grid">
+          <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🚀</div><div class="empty-text">No pipelines yet. Create your first pipeline to get started.</div></div>
+        </div>
+      </div>
+
+      <!-- ─── HISTORY TAB ─── -->
+      <div id="tab-history" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <div style="font-family:var(--fh);font-size:20px;font-weight:800;color:#fff;">Run History</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:3px;">Complete audit trail of all pipeline executions</div>
+          </div>
+          <select id="history-filter" class="btn btn-ghost" onchange="loadHistory()" style="padding:8px 14px;cursor:pointer;">
+            <option value="">All Pipelines</option>
+          </select>
+        </div>
+        <div class="panel">
+          <div class="pb">
+            <table class="htable">
+              <thead><tr><th>Status</th><th>Pipeline</th><th>Step / Action</th><th>Type</th><th>Duration</th><th>Time</th><th>Details</th></tr></thead>
+              <tbody id="history-tbody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No history yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── ALERTS TAB ─── -->
+      <div id="tab-alerts" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <div style="font-family:var(--fh);font-size:20px;font-weight:800;color:#fff;">Alerts</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:3px;">Real-time notifications from pipeline runs</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="dismissAllAlerts()">Dismiss All</button>
+        </div>
+        <div id="alerts-list">
+          <div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No alerts — all pipelines are healthy!</div></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /workspace -->
+</div><!-- /main -->
+
+<!-- ══════════ CREATE/EDIT MODAL ══════════ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Create Pipeline</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-pid"/>
+
+      <div class="grid2">
+        <div class="field"><label>Pipeline Name</label><input type="text" id="p-name" placeholder="e.g. Nightly Sales Load"/></div>
+        <div class="field"><label>Description</label><input type="text" id="p-desc" placeholder="What does this pipeline do?"/></div>
+      </div>
+
+      <div class="info-box">Select a workspace and model, then add steps (imports, exports, or actions) to build your pipeline.</div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Workspace</label>
+          <select id="p-ws" onchange="loadModels()"><option value="">— loading workspaces —</option></select>
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <select id="p-model" onchange="loadActions()"><option value="">— select workspace first —</option></select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- STEPS -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <label style="margin:0">Pipeline Steps (executed in order)</label>
+        <button class="btn btn-ghost btn-xs" onclick="addStep()">+ Add Step</button>
+      </div>
+      <div id="steps-container">
+        <div style="color:var(--muted);font-size:12.5px;padding:16px;text-align:center;
+          border:1px dashed rgba(255,255,255,.1);border-radius:10px;">
+          Click "Add Step" to start building your pipeline
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SCHEDULE -->
+      <div class="grid2">
+        <div class="field">
+          <label>Schedule</label>
+          <select id="p-sched" onchange="toggleScheduleVal()">
+            <option value="manual">Manual only</option>
+            <option value="hourly">Every Hour</option>
+            <option value="interval_minutes">Every N Minutes</option>
+            <option value="daily">Daily at time</option>
+          </select>
+        </div>
+        <div class="field" id="sched-val-wrap" style="display:none">
+          <label id="sched-val-label">Value</label>
+          <input type="text" id="p-sched-val" placeholder="e.g. 30 or 09:00"/>
+        </div>
+      </div>
+
+      <div class="field" style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="p-stop" checked style="width:auto;accent-color:var(--accent);"/>
+        <label style="margin:0;letter-spacing:0;text-transform:none;font-size:13px;">Stop pipeline on step failure</label>
+      </div>
+
+      <div class="err-box" id="modal-err"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePipeline()" id="save-btn">Create Pipeline</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+let AUTH = {{ auth_header|default('', true)|tojson }};
+let USER = {{ user|default('', true)|tojson }};
+const LOGGED_IN = {{ logged_in|default(false, true)|tojson }};
+const INITIAL_SESSION = {{ session_status|default({}, true)|tojson }};
+let steps = [];
+let availableActions = { imports: [], exports: [], actions: [] };
+let currentEditId = null;
+let refreshInterval = null;
+let sessionState = INITIAL_SESSION || {};
+
+// ══════════════════════════════════
+// UTILS
+// ══════════════════════════════════
+const $ = id => document.getElementById(id);
+const fmt_duration = s => s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${Math.round(s%60)}s`;
+const fmt_time = t => t || '—';
+
+function statusPill(status) {
+  const map = {
+    'IDLE':    ['sp-idle','⬤ Idle'],
+    'RUNNING': ['sp-running','⬤ Running'],
+    'SUCCESS': ['sp-success','✓ Success'],
+    'FAILED':  ['sp-failed','✗ Failed'],
+    'WARNING': ['sp-warning','⚠ Warning'],
+    'NEVER RUN':['sp-idle','— Never Run'],
+  };
+  const [cls, label] = map[status] || ['sp-idle', status];
+  return `<span class="status-pill ${cls}">${label}</span>`;
+}
+
+function statusDot(status) {
+  const cls = { SUCCESS:'sd-success', FAILED:'sd-failed', WARNING:'sd-warning', RUNNING:'sd-running' }[status] || 'sd-failed';
+  return `<span class="status-dot ${cls}"></span>`;
+}
+
+// ══════════════════════════════════
+// AUTH
+// ══════════════════════════════════
+function toggleAuth() {
+  const t = $('at').value;
+  $('bf').style.display = t === 'basic' ? '' : 'none';
+  $('tf').style.display = t === 'token' ? '' : 'none';
+}
+
+async function doLogin() {
+  const btn = $('lbtn'); btn.disabled = true; btn.textContent = 'Connecting…';
+  $('lerr').style.display = 'none';
+
+  const type = $('at').value;
+  const payload = { auth_type: type };
+  if (type === 'basic') { payload.email = $('le').value.trim(); payload.password = $('lp').value; }
+  else { payload.token = $('lt').value.trim(); }
+
+  const r = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const d = await r.json();
+  btn.disabled = false; btn.textContent = '🔌 Connect to Anaplan';
+
+  if (d.success) {
+    AUTH = d.auth || '';
+    USER = d.user || 'User';
+    sessionState = {
+      authenticated: true,
+      expires_in_seconds: d.expires_in_seconds || 1800,
+      warning_threshold_seconds: 300,
+      expired: false,
+      warning: false,
+    };
+    $('login').style.display = 'none';
+    const m = $('main'); m.style.display = 'flex';
+    $('user-lbl').textContent = USER;
+    startDashboard();
+  } else {
+    const el = $('lerr'); el.style.display = 'block'; el.textContent = '⚠ ' + (d.error || 'Login failed');
+  }
+}
+
+async function doLogout() {
+  await fetch('/auth/logout', { method:'POST' });
+  AUTH = ''; USER = '';
+  sessionState = {};
+  if (refreshInterval) clearInterval(refreshInterval);
+  $('main').style.display = 'none';
+  $('login').style.display = 'flex';
+  $('session-banner').classList.remove('show');
+  $('session-banner').textContent = '';
+}
+
+// ══════════════════════════════════
+// TABS
+// ══════════════════════════════════
+const TABS = ['dashboard','pipelines','history','alerts'];
+function switchTab(tab) {
+  TABS.forEach(t => {
+    $(`tab-${t}`).style.display = t === tab ? '' : 'none';
+    $(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'history') loadHistory();
+  if (tab === 'alerts') loadAlerts();
+  if (tab === 'pipelines') loadPipelines();
+}
+
+// ══════════════════════════════════
+// DASHBOARD INIT & REFRESH
+// ══════════════════════════════════
+function startDashboard() {
+  refreshAll();
+  refreshInterval = setInterval(refreshAll, 5000);
+  loadWorkspaces();
+}
+
+async function refreshAll() {
+  await Promise.all([loadStats(), loadDashboardPipes(), loadRecentHistory()]);
+}
+
+function fmtSessionTime(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+
+function handleExpiredSession(message) {
+  if (refreshInterval) clearInterval(refreshInterval);
+  AUTH = '';
+  sessionState = {};
+  $('main').style.display = 'none';
+  $('login').style.display = 'flex';
+  const banner = $('session-banner');
+  banner.classList.remove('show');
+  banner.textContent = '';
+  const el = $('lerr');
+  el.style.display = 'block';
+  el.textContent = message || 'Session expired. Please log in again.';
+}
+
+function renderSessionBanner() {
+  const banner = $('session-banner');
+  if (!sessionState || !sessionState.authenticated) {
+    banner.classList.remove('show');
+    banner.textContent = '';
+    return;
+  }
+  if (sessionState.warning) {
+    banner.classList.add('show');
+    banner.innerHTML = `<strong>Session warning:</strong> your Anaplan session will expire in ${fmtSessionTime(sessionState.expires_in_seconds || 0)}.`;
+    return;
+  }
+  banner.classList.remove('show');
+  banner.textContent = '';
+}
+
+async function loadStats() {
+  const r = await fetch('/stats');
+  if (r.status === 401) {
+    handleExpiredSession('Session expired. Please log in again.');
+    return;
+  }
+  const d = await r.json();
+  sessionState = d.session || {};
+  if (sessionState.expired || !sessionState.authenticated) {
+    handleExpiredSession('Session expired. Please log in again.');
+    return;
+  }
+  renderSessionBanner();
+  $('sc-total').textContent     = d.total_pipelines;
+  $('sc-success').textContent   = d.successful_runs;
+  $('sc-failed').textContent    = d.failed_runs;
+  $('sc-duration').textContent  = fmt_duration(d.avg_duration_s);
+  $('ts-running').textContent   = d.running;
+  $('ts-failed').textContent    = d.failed_pipelines;
+  $('ts-total').textContent     = d.total_pipelines;
+  $('ts-alerts').textContent    = d.unread_alerts;
+  const badge = $('alert-badge');
+  if (d.unread_alerts > 0) { badge.style.display = ''; badge.textContent = d.unread_alerts; }
+  else { badge.style.display = 'none'; }
+}
+
+async function loadDashboardPipes() {
+  const r = await fetch('/pipelines');
+  const pipes = await r.json();
+  const el = $('dashboard-pipes');
+  if (!pipes.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔧</div><div class="empty-text">No pipelines yet. Create your first one!</div></div>';
+    return;
+  }
+  el.innerHTML = pipes.map(p => renderPipeCard(p, false)).join('');
+}
+
+async function loadPipelines() {
+  const r = await fetch('/pipelines');
+  const pipes = await r.json();
+  // update history filter dropdown
+  const hf = $('history-filter');
+  const cur = hf.value;
+  hf.innerHTML = '<option value="">All Pipelines</option>' + pipes.map(p => `<option value="${p.id}" ${cur===p.id?'selected':''}>${p.name}</option>`).join('');
+
+  const el = $('pipelines-grid');
+  if (!pipes.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🚀</div><div class="empty-text">No pipelines yet. Create your first pipeline to get started.</div></div>';
+    return;
+  }
+  el.innerHTML = pipes.map(p => renderPipeCard(p, true)).join('');
+}
+
+function renderPipeCard(p, showControls) {
+  const stepRows = (p.steps || []).map(s => {
+    const typeClass = `type-${s.type}`;
+    const dotClass  = `dot-${s.type}`;
+    return `<div class="step-row">
+      <div class="step-dot ${dotClass}"></div>
+      <span class="step-type ${typeClass}">${s.type.toUpperCase()}</span>
+      <span class="step-name">${s.name || s.action_id}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:12px;">No steps configured</div>';
+
+  const schedLabel = p.schedule_type === 'manual' ? 'Manual' :
+    p.schedule_type === 'hourly' ? 'Hourly' :
+    p.schedule_type === 'daily' ? `Daily ${p.schedule_value}` :
+    `Every ${p.schedule_value}m`;
+
+  const isRunning = p.status === 'RUNNING';
+  const totalSteps = (p.steps || []).length;
+  const currentStep = p.current_step || 0;
+  const progress = isRunning && totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
+
+  const cardClass = p.status === 'RUNNING' ? 'running' : p.last_status === 'FAILED' ? 'failed' : p.last_status === 'SUCCESS' ? 'success' : '';
+
+  let controls = '';
+  if (showControls) {
+    controls = `
+      <button class="btn btn-run btn-xs" onclick="triggerPipeline('${p.id}')" ${isRunning ? 'disabled' : ''}>
+        ${isRunning ? '<div class="spin"></div>' : '▶ Run'}
+      </button>
+      <button class="btn btn-ghost btn-xs" onclick="openEditModal('${p.id}')">Edit</button>
+      <button class="btn btn-danger btn-xs" onclick="deletePipeline('${p.id}')">Delete</button>
+    `;
+  } else {
+    controls = `<button class="btn btn-run btn-xs" onclick="triggerPipeline('${p.id}')" ${isRunning?'disabled':''}>
+      ${isRunning ? '<div class="spin"></div>' : '▶ Run'}
+    </button>`;
+  }
+
+  return `<div class="pipe-card ${cardClass}" id="pc-${p.id}">
+    <div class="pc-header">
+      <div>
+        <div class="pc-name">${p.name}</div>
+        ${p.description ? `<div class="pc-desc">${p.description}</div>` : ''}
+      </div>
+      ${statusPill(isRunning ? 'RUNNING' : p.last_status || 'IDLE')}
+    </div>
+    ${isRunning ? `<div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>` : ''}
+    <div class="pc-meta">
+      <span class="pc-tag">📦 ${p.model_name || p.model_id}</span>
+      <span class="pc-tag sched-badge">🕐 ${schedLabel}</span>
+      <span class="pc-tag">${totalSteps} step${totalSteps !== 1 ? 's' : ''}</span>
+      ${!p.enabled ? '<span class="pc-tag" style="color:var(--red)">⏸ Disabled</span>' : ''}
+    </div>
+    <div class="pc-steps">${stepRows}</div>
+    <div class="pc-footer">
+      <div class="pc-last">
+        ${p.last_run ? `Last: ${p.last_run} ${p.last_duration ? `(${fmt_duration(p.last_duration)})` : ''}` : 'Never run'}
+        · Runs: ${p.run_count || 0}
+      </div>
+      ${controls}
+    </div>
+  </div>`;
+}
+
+async function loadRecentHistory() {
+  const r = await fetch('/history');
+  const h = await r.json();
+  const tb = $('recent-tbody');
+  if (!h.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">No runs yet</td></tr>';
+    return;
+  }
+  tb.innerHTML = h.slice(0, 10).map(row => `<tr>
+    <td>${statusDot(row.status)}${row.status}</td>
+    <td>${row.pipeline_name}</td>
+    <td>${row.action_name}</td>
+    <td>${fmt_duration(row.duration_s)}</td>
+    <td>${row.time}</td>
+  </tr>`).join('');
+}
+
+async function loadHistory() {
+  const pid = $('history-filter').value;
+  const url = pid ? `/history?pipeline_id=${pid}` : '/history';
+  const r = await fetch(url);
+  const h = await r.json();
+  const tb = $('history-tbody');
+  if (!h.length) {
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">No history yet</td></tr>';
+    return;
+  }
+  tb.innerHTML = h.map(row => `<tr>
+    <td>${statusDot(row.status)}${row.status}</td>
+    <td>${row.pipeline_name}</td>
+    <td>${row.action_name}</td>
+    <td><span class="step-type type-${row.action_type}">${row.action_type.toUpperCase()}</span></td>
+    <td>${fmt_duration(row.duration_s)}</td>
+    <td>${row.time}</td>
+    <td style="color:var(--muted);font-size:11.5px;">${row.details}</td>
+  </tr>`).join('');
+}
+
+async function loadAlerts() {
+  const r = await fetch('/alerts');
+  const a = await r.json();
+  const el = $('alerts-list');
+  if (!a.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No alerts — all pipelines are healthy!</div></div>';
+    return;
+  }
+  el.innerHTML = a.map(al => {
+    const iconMap = { error:'🔴', warning:'🟡', success:'🟢' };
+    return `<div class="alert-item ai-${al.level}" id="al-${al.id}">
+      <div class="ai-icon">${iconMap[al.level]||'ℹ️'}</div>
+      <div class="ai-body">
+        <div class="ai-msg">${al.message}</div>
+        <div class="ai-meta">${al.pipeline_name} · ${al.time}</div>
+      </div>
+      <button class="ai-dismiss" onclick="dismissAlert('${al.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+async function dismissAlert(id) {
+  await fetch(`/alerts/${id}/dismiss`, { method:'POST' });
+  const el = $(`al-${id}`); if(el) el.remove();
+}
+async function dismissAllAlerts() {
+  const r = await fetch('/alerts');
+  const a = await r.json();
+  await Promise.all(a.map(al => fetch(`/alerts/${al.id}/dismiss`, { method:'POST' })));
+  loadAlerts();
+}
+
+// ══════════════════════════════════
+// PIPELINE ACTIONS
+// ══════════════════════════════════
+async function triggerPipeline(pid) {
+  const r = await fetch(`/pipelines/${pid}/run`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ auth: AUTH })
+  });
+  const d = await r.json();
+  if (d.success) { refreshAll(); }
+  else { alert(d.error || 'Failed to start pipeline'); }
+}
+
+async function deletePipeline(pid) {
+  if (!confirm('Delete this pipeline?')) return;
+  await fetch(`/pipelines/${pid}`, { method:'DELETE' });
+  loadPipelines(); loadDashboardPipes(); loadStats();
+}
+
+// ══════════════════════════════════
+// WORKSPACE / MODEL / ACTION LOADING
+// ══════════════════════════════════
+async function loadWorkspaces() {
+  const r = await fetch(`/proxy/workspaces?auth=${encodeURIComponent(AUTH)}`);
+  const d = await r.json();
+  const ws = d.workspaces || [];
+  const sel = $('p-ws');
+  sel.innerHTML = '<option value="">— select workspace —</option>' +
+    ws.map(w => `<option value="${w.id}" data-name="${w.name}">${w.name}</option>`).join('');
+}
+
+async function loadModels() {
+  const sel = $('p-ws');
+  const wsId = sel.value;
+  if (!wsId) return;
+  const r = await fetch(`/proxy/models?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}`);
+  const d = await r.json();
+  const models = d.models || [];
+  $('p-model').innerHTML = '<option value="">— select model —</option>' +
+    models.map(m => `<option value="${m.id}" data-name="${m.name}">${m.name}</option>`).join('');
+  availableActions = { imports:[], exports:[], actions:[] };
+  renderSteps();
+}
+
+async function loadActions() {
+  const wsId    = $('p-ws').value;
+  const modelId = $('p-model').value;
+  if (!wsId || !modelId) return;
+
+  const [ir, er, ar] = await Promise.all([
+    fetch(`/proxy/imports?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`),
+    fetch(`/proxy/exports?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`),
+    fetch(`/proxy/actions?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`)
+  ]);
+  const id = await ir.json();
+  const ed = await er.json();
+  const ad = await ar.json();
+  availableActions = {
+    imports: id.imports || [],
+    exports: ed.exports || [],
+    actions: ad.actions || [],
+  };
+  renderSteps();
+}
+
+// ══════════════════════════════════
+// STEP BUILDER
+// ══════════════════════════════════
+function addStep() {
+  steps.push({ type:'import', action_id:'', name:'' });
+  renderSteps();
+}
+
+function removeStep(i) {
+  steps.splice(i, 1);
+  renderSteps();
+}
+
+function updateStep(i, key, val) {
+  steps[i][key] = val;
+  if (key === 'action_id') {
+    // auto-fill name
+    const type = steps[i].type;
+    const list = availableActions[type+'s'] || availableActions[type] || [];
+    const found = list.find(a => a.id === val || a.importId === val || a.exportId === val);
+    if (found) steps[i].name = found.name || found.importName || found.exportName || val;
+  }
+  if (key === 'type') {
+    steps[i].action_id = '';
+    steps[i].name = '';
+    renderSteps();
+  }
+}
+
+function getActionsForType(type) {
+  const map = { import: availableActions.imports, export: availableActions.exports, action: availableActions.actions, process: availableActions.actions };
+  return map[type] || [];
+}
+
+function getActionId(a) { return a.id || a.importId || a.exportId || ''; }
+function getActionName(a) { return a.name || a.importName || a.exportName || getActionId(a); }
+
+function renderSteps() {
+  const c = $('steps-container');
+  if (!steps.length) {
+    c.innerHTML = `<div style="color:var(--muted);font-size:12.5px;padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:10px;">Click "Add Step" to start building your pipeline</div>`;
+    return;
+  }
+  c.innerHTML = steps.map((s, i) => {
+    const actions = getActionsForType(s.type);
+    const opts = actions.length
+      ? actions.map(a => `<option value="${getActionId(a)}" ${s.action_id===getActionId(a)?'selected':''}>${getActionName(a)}</option>`).join('')
+      : `<option value="${s.action_id}">${s.action_id || '— select model first —'}</option>`;
+    return `<div class="step-builder">
+      <div class="sb-header">
+        <div class="sb-num">${i+1}</div>
+        <span style="font-size:13px;color:var(--text);">Step ${i+1}</span>
+        <button class="sb-remove" onclick="removeStep(${i})">×</button>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Type</label>
+          <select onchange="updateStep(${i},'type',this.value)">
+            <option value="import"  ${s.type==='import' ?'selected':''}>Import</option>
+            <option value="export"  ${s.type==='export' ?'selected':''}>Export</option>
+            <option value="action"  ${s.type==='action' ?'selected':''}>Action</option>
+            <option value="process" ${s.type==='process'?'selected':''}>Process</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>${s.type.charAt(0).toUpperCase()+s.type.slice(1)} Action</label>
+          <select onchange="updateStep(${i},'action_id',this.value)">
+            <option value="">— select —</option>
+            ${opts}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Step Label (optional)</label>
+        <input type="text" value="${s.name||''}" placeholder="Friendly name for this step" onchange="updateStep(${i},'name',this.value)"/>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleScheduleVal() {
+  const t = $('p-sched').value;
+  const wrap = $('sched-val-wrap');
+  if (t === 'manual' || t === 'hourly') {
+    wrap.style.display = 'none';
+  } else {
+    wrap.style.display = '';
+    $('sched-val-label').textContent = t === 'daily' ? 'Time (HH:MM)' : 'Interval (minutes)';
+    $('p-sched-val').placeholder = t === 'daily' ? '09:00' : '30';
+  }
+}
+
+// ══════════════════════════════════
+// MODAL
+// ══════════════════════════════════
+function openCreateModal() {
+  currentEditId = null;
+  steps = [];
+  $('modal-title').textContent = 'Create Pipeline';
+  $('save-btn').textContent    = 'Create Pipeline';
+  $('edit-pid').value          = '';
+  $('p-name').value            = '';
+  $('p-desc').value            = '';
+  $('p-ws').value              = '';
+  $('p-model').innerHTML       = '<option value="">— select workspace first —</option>';
+  $('p-sched').value           = 'manual';
+  $('p-sched-val').value       = '';
+  $('sched-val-wrap').style.display = 'none';
+  $('p-stop').checked          = true;
+  $('modal-err').style.display = 'none';
+  availableActions             = { imports:[], exports:[], actions:[] };
+  renderSteps();
+  $('modal').classList.add('open');
+}
+
+async function openEditModal(pid) {
+  const r = await fetch(`/pipelines/${pid}`);
+  const p = await r.json();
+  currentEditId = pid;
+  steps = JSON.parse(JSON.stringify(p.steps || []));
+
+  $('modal-title').textContent = 'Edit Pipeline';
+  $('save-btn').textContent    = 'Save Changes';
+  $('edit-pid').value          = pid;
+  $('p-name').value            = p.name;
+  $('p-desc').value            = p.description || '';
+  $('p-sched').value           = p.schedule_type;
+  $('p-sched-val').value       = p.schedule_value || '';
+  $('p-stop').checked          = p.stop_on_failure !== false;
+  toggleScheduleVal();
+  $('modal-err').style.display = 'none';
+
+  // Set workspace
+  await loadWorkspaces();
+  setTimeout(async () => {
+    $('p-ws').value = p.workspace_id;
+    await loadModels();
+    setTimeout(async () => {
+      $('p-model').value = p.model_id;
+      await loadActions();
+      renderSteps();
+    }, 300);
+  }, 300);
+
+  $('modal').classList.add('open');
+}
+
+function closeModal() {
+  $('modal').classList.remove('open');
+  currentEditId = null;
+  steps = [];
+}
+
+async function savePipeline() {
+  const name = $('p-name').value.trim();
+  const wsSel = $('p-ws');
+  const mSel  = $('p-model');
+
+  if (!name) { showModalErr('Please enter a pipeline name.'); return; }
+  if (!wsSel.value) { showModalErr('Please select a workspace.'); return; }
+  if (!mSel.value) { showModalErr('Please select a model.'); return; }
+  if (!steps.length) { showModalErr('Add at least one step to the pipeline.'); return; }
+  if (steps.some(s => !s.action_id)) { showModalErr('All steps must have an action selected.'); return; }
+
+  const wsName = wsSel.options[wsSel.selectedIndex]?.dataset?.name || wsSel.value;
+  const mName  = mSel.options[mSel.selectedIndex]?.dataset?.name  || mSel.value;
+
+  const payload = {
+    name:           name,
+    description:    $('p-desc').value.trim(),
+    workspace_id:   wsSel.value,
+    workspace_name: wsName,
+    model_id:       mSel.value,
+    model_name:     mName,
+    steps:          steps,
+    schedule_type:  $('p-sched').value,
+    schedule_value: $('p-sched-val').value.trim(),
+    stop_on_failure:$('p-stop').checked,
+    enabled:        true,
+    auth:           AUTH,
+  };
+
+  $('save-btn').disabled = true; $('save-btn').innerHTML = '<div class="spin"></div> Saving…';
+
+  let r;
+  if (currentEditId) {
+    r = await fetch(`/pipelines/${currentEditId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  } else {
+    r = await fetch('/pipelines', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  }
+  const d = await r.json();
+  $('save-btn').disabled = false; $('save-btn').textContent = currentEditId ? 'Save Changes' : 'Create Pipeline';
+
+  if (d.success) {
+    closeModal();
+    loadPipelines();
+    loadDashboardPipes();
+    loadStats();
+    switchTab('pipelines');
+  } else {
+    showModalErr(d.error || 'Failed to save pipeline');
+  }
+}
+
+function showModalErr(msg) {
+  const el = $('modal-err'); el.style.display = 'block'; el.textContent = msg;
+}
+
+// close modal on overlay click
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+
+// keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+if (LOGGED_IN && AUTH && USER) {
+  $('login').style.display = 'none';
+  $('main').style.display = 'flex';
+  $('user-lbl').textContent = USER;
+  renderSessionBanner();
+  startDashboard();
+}
+</script>
+</body>
+</html>

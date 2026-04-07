@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DB Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#060b12;--s1:#0c1219;--s2:#121b25;--border:rgba(255,255,255,0.06);
+  --accent:#00e5b0;--blue:#3b9eff;--text:#c8dff0;--muted:#56718d;--warn:#ffaa00;
+  --fh:'Syne',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,229,176,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,176,.02) 1px,transparent 1px);background-size:52px 52px;pointer-events:none;}
+.shell{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:28px;}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--blue));display:flex;align-items:center;justify-content:center;color:#000;font-size:20px;font-weight:700;}
+.title{font-family:var(--fh);font-size:28px;font-weight:800;color:#fff;}
+.sub{color:var(--muted);font-size:13px;margin-top:4px;}
+.actions{margin-left:auto;display:flex;gap:10px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);text-decoration:none;font-size:12px;}
+.btn:hover{border-color:rgba(0,229,176,.25);color:var(--accent);}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px;}
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
+.ph{padding:18px 20px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+.ph-title{font-family:var(--fh);font-size:15px;font-weight:700;color:#fff;}
+.ph-sub{color:var(--muted);font-size:12px;margin-top:4px;}
+.pb{padding:18px 20px;}
+.table-list{display:flex;flex-direction:column;gap:10px;}
+.table-card{display:block;padding:14px 15px;border-radius:12px;border:1px solid var(--border);background:var(--s2);text-decoration:none;color:var(--text);}
+.table-card:hover,.table-card.active{border-color:rgba(0,229,176,.24);box-shadow:0 0 0 1px rgba(0,229,176,.1) inset;}
+.table-name{font-size:13px;font-weight:600;color:#fff;}
+.table-meta{font-size:11px;color:var(--muted);margin-top:5px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.stat{padding:14px 16px;border-radius:14px;background:var(--s2);border:1px solid var(--border);}
+.stat-label{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);}
+.stat-value{font-family:var(--fh);font-size:24px;font-weight:800;color:#fff;margin-top:6px;}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:12px 14px;color:var(--muted);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);position:sticky;top:0;}
+td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.mono{font-family:var(--fm);word-break:break-word;white-space:pre-wrap;}
+.note{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(255,170,0,.08);border:1px solid rgba(255,170,0,.18);font-size:12px;color:#f7d08a;}
+@media (max-width: 980px){
+  .grid{grid-template-columns:1fr;}
+  .stats{grid-template-columns:1fr;}
+  .topbar{align-items:flex-start;flex-direction:column;}
+  .actions{margin-left:0;}
+}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="logo">DB</div>
+      <div>
+        <div class="title">SQLite Admin</div>
+        <div class="sub">Read-only browser for your local `dashboard.db` contents.</div>
+      </div>
+      <div class="actions">
+        <a class="btn" href="/">Back to Dashboard</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title">Tables</div>
+          <div class="ph-sub">Choose a table to inspect row data.</div>
+        </div>
+        <div class="pb">
+          <div class="table-list">
+            {% for item in tables %}
+            <a class="table-card {% if item.name == selected_table %}active{% endif %}" href="/admin/db?table={{ item.name }}">
+              <div class="table-name">{{ item.name }}</div>
+              <div class="table-meta">{{ item.count }} rows</div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <div class="ph-title">{{ selected_table }}</div>
+          <div class="ph-sub">Showing the latest {{ rows|length }} rows.</div>
+        </div>
+        <div class="pb">
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Database File</div>
+              <div class="stat-value">{{ db_name }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Selected Table</div>
+              <div class="stat-value">{{ selected_table }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Rows Shown</div>
+              <div class="stat-value">{{ rows|length }}</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  {% for col in columns %}
+                  <th>{{ col }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% if rows %}
+                  {% for row in rows %}
+                  <tr>
+                    {% for col in columns %}
+                    <td class="mono">{{ row[col] }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="{{ columns|length if columns else 1 }}">No rows found.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note">Anaplan passwords and tokens are intentionally not stored in this database.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

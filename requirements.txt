@@ -1,0 +1,6 @@
+flask>=3.0.0
+requests>=2.31.0
+schedule>=1.2.0
+gunicorn>=23.0.0
+SQLAlchemy>=2.0.36
+psycopg2-binary>=2.9.9
