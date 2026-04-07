@@ -567,7 +567,7 @@ def execute_step(auth, step, ws_id, model_id, pipeline_id, pipeline_name):
         "import":  "imports",
         "export":  "exports",
         "action":  "actions",
-        "process": "actions",
+        "process": "processes",
     }
     segment = type_map.get(action_type, "actions")
     task_path = f"/workspaces/{ws_id}/models/{model_id}/{segment}/{action_id}/tasks"
@@ -1010,6 +1010,14 @@ def proxy_actions():
     ws   = request.args.get("ws_id", "")
     m    = request.args.get("model_id", "")
     sc, data = anaplan_get(auth, f"/workspaces/{ws}/models/{m}/actions")
+    return jsonify(data), sc
+
+@app.route("/proxy/processes")
+def proxy_processes():
+    auth = request.args.get("auth") or get_auth()
+    ws   = request.args.get("ws_id", "")
+    m    = request.args.get("model_id", "")
+    sc, data = anaplan_get(auth, f"/workspaces/{ws}/models/{m}/processes")
     return jsonify(data), sc
 
 # ─────────────────────────────────────────

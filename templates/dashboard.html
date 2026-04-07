@@ -482,7 +482,7 @@ let USER = {{ user|default('', true)|tojson }};
 const LOGGED_IN = {{ logged_in|default(false, true)|tojson }};
 const INITIAL_SESSION = {{ session_status|default({}, true)|tojson }};
 let steps = [];
-let availableActions = { imports: [], exports: [], actions: [] };
+let availableActions = { imports: [], exports: [], actions: [], processes: [] };
 let currentEditId = null;
 let refreshInterval = null;
 let sessionState = INITIAL_SESSION || {};
@@ -854,7 +854,7 @@ async function loadModels() {
   const models = d.models || [];
   $('p-model').innerHTML = '<option value="">— select model —</option>' +
     models.map(m => `<option value="${m.id}" data-name="${m.name}">${m.name}</option>`).join('');
-  availableActions = { imports:[], exports:[], actions:[] };
+  availableActions = { imports:[], exports:[], actions:[], processes:[] };
   renderSteps();
 }
 
@@ -863,18 +863,21 @@ async function loadActions() {
   const modelId = $('p-model').value;
   if (!wsId || !modelId) return;
 
-  const [ir, er, ar] = await Promise.all([
+  const [ir, er, ar, pr] = await Promise.all([
     fetch(`/proxy/imports?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`),
     fetch(`/proxy/exports?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`),
-    fetch(`/proxy/actions?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`)
+    fetch(`/proxy/actions?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`),
+    fetch(`/proxy/processes?auth=${encodeURIComponent(AUTH)}&ws_id=${wsId}&model_id=${modelId}`)
   ]);
   const id = await ir.json();
   const ed = await er.json();
   const ad = await ar.json();
+  const pd = await pr.json();
   availableActions = {
     imports: id.imports || [],
     exports: ed.exports || [],
     actions: ad.actions || [],
+    processes: pd.processes || [],
   };
   renderSteps();
 }
@@ -909,12 +912,12 @@ function updateStep(i, key, val) {
 }
 
 function getActionsForType(type) {
-  const map = { import: availableActions.imports, export: availableActions.exports, action: availableActions.actions, process: availableActions.actions };
+  const map = { import: availableActions.imports, export: availableActions.exports, action: availableActions.actions, process: availableActions.processes };
   return map[type] || [];
 }
 
-function getActionId(a) { return a.id || a.importId || a.exportId || ''; }
-function getActionName(a) { return a.name || a.importName || a.exportName || getActionId(a); }
+function getActionId(a) { return a.id || a.importId || a.exportId || a.processId || ''; }
+function getActionName(a) { return a.name || a.importName || a.exportName || a.processName || getActionId(a); }
 
 function renderSteps() {
   const c = $('steps-container');
@@ -989,7 +992,7 @@ function openCreateModal() {
   $('sched-val-wrap').style.display = 'none';
   $('p-stop').checked          = true;
   $('modal-err').style.display = 'none';
-  availableActions             = { imports:[], exports:[], actions:[] };
+  availableActions             = { imports:[], exports:[], actions:[], processes:[] };
   renderSteps();
   $('modal').classList.add('open');
 }
